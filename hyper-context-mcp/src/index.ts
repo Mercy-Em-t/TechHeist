@@ -25,6 +25,7 @@ import { BiochemicalBus, BiochemicalHormone } from "./biochemical-bus.js";
 import { DnaSequencer, MacroMissionBlueprint } from "./dna-sequencer.js";
 import { SensoryGateway } from "./sensory-gateway.js";
 import { SeasonalSynchronizer, SeasonalPlaybook } from "./seasonal-synchronizer.js";
+import { FrontendChoreographer } from "./frontend-choreographer.js";
 
 // Load secure environment keys immediately upon startup
 EnvVault.load();
@@ -191,6 +192,7 @@ BiochemicalBus.registerReceptor((hormone: BiochemicalHormone) => {
 
       // Automated Manualness Trigger: If this node is connected to our custom browser dashboards, 
       // it immediately updates the visual color styling to match the agreed themeColor!
+      FrontendChoreographer.applyTheme(unifiedPlaybook.themeColor);
     }
   }
 

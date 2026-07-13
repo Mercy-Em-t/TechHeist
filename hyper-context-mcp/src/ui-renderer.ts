@@ -213,6 +213,8 @@ export class UiRendererDashboard {
                 const view = document.getElementById('graph-view');
                 view.innerHTML = '';
                 
+                let activeThemeColor = null;
+
                 Object.values(data.nodes).forEach(node => {
                   const card = document.createElement('div');
                   card.className = 'card';
@@ -221,9 +223,31 @@ export class UiRendererDashboard {
                     node.tags.forEach(t => {
                       card.innerHTML += \`<span class="tag">\${t}</span>\`;
                     });
+                    
+                    if (node.tags.includes("seasonal-commune")) {
+                      const match = node.content.match(/Unified Theme Color Match:\\s*(#[0-9a-fA-F]{3,6})/);
+                      if (match) activeThemeColor = match[1];
+                    }
                   }
                   view.appendChild(card);
                 });
+
+                if (activeThemeColor) {
+                  let dynamicStyle = document.getElementById('dynamic-theme');
+                  if (!dynamicStyle) {
+                    dynamicStyle = document.createElement('style');
+                    dynamicStyle.id = 'dynamic-theme';
+                    document.head.appendChild(dynamicStyle);
+                  }
+                  dynamicStyle.innerHTML = \`
+                    h2 { color: \${activeThemeColor} !important; border-bottom-color: \${activeThemeColor}44 !important; }
+                    .action-btn { border-color: \${activeThemeColor} !important; color: \${activeThemeColor} !important; }
+                    .action-btn:hover { background: \${activeThemeColor} !important; color: #090a0f !important; box-shadow: 0 0 15px \${activeThemeColor}88 !important; }
+                    .tag { color: \${activeThemeColor} !important; }
+                    #peer-url { color: \${activeThemeColor} !important; }
+                  \`;
+                }
+
               } catch (e) {}
             }
             
