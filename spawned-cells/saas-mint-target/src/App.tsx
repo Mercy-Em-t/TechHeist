@@ -9,7 +9,7 @@ export default function App() {
           HYPER-CONTEXT MINTED APP
         </h1>
         <p style={{ color: '#64748b', fontSize: '0.85rem', marginTop: '0.5rem' }}>
-          AI Generated Specification: Generate a sleek, dark-mode React application based on this biological prompt: Build an application solving this bottleneck: Users lack a highly stylized dark-mode dashboard for real-time token tracking.
+          AI Generated Specification: Generate a sleek, dark-mode React application based on this biological prompt: Build an application solving this bottleneck: Developers need a way to auto-reboot crashed docker containers via mobile.
         </p>
       </header>
       
