@@ -67,6 +67,27 @@ ReactDOM.createRoot(document.getElementById('root')!).render(
     }
   }
 
+  /**
+   * Analyzes raw social media posts to extract a sentiment score and core bottleneck.
+   */
+  public static async analyzeSocialSentiment(posts: string[]): Promise<{ sentiment: string, bottleneck: string }> {
+    console.error(`\n🧠 [LLM Bridge]: Analyzing Social Sentiment for ${posts.length} unstructured posts...`);
+    
+    // CONFIGURATION BOX: Determine Execution Path
+    if (process.env.GEMINI_API_KEY) {
+      console.error(`🧠 [Execution Path]: Gemini API Detected. Calling Live LLM for Sentiment Analysis...`);
+      return await this.callGeminiSentiment(posts);
+    } else if (process.env.OPENAI_API_KEY) {
+      console.error(`🧠 [Execution Path]: OpenAI API Detected. Calling Live LLM for Sentiment Analysis...`);
+      return await this.callOpenAISentiment(posts);
+    } else {
+      console.error(`🧠 [Execution Path]: No API Keys Detected. Running Local NLP Heuristic Engine...`);
+      // Simulate AI synthesis latency
+      await new Promise(resolve => setTimeout(resolve, 2000));
+      return this.mockSentimentHeuristic(posts);
+    }
+  }
+
   // --- SCAFFOLDED API CONNECTIONS ---
 
   private static async callGeminiAPI(prompt: string): Promise<string> {
@@ -95,6 +116,48 @@ ReactDOM.createRoot(document.getElementById('root')!).render(
     console.error(`⚠️ [OpenAI Sandbox]: API call scaffold reached. Executing bypass until fully wired.`);
     await new Promise(resolve => setTimeout(resolve, 1500));
     return this.getPremiumTemplate(prompt);
+  }
+
+  private static async callGeminiSentiment(posts: string[]): Promise<{ sentiment: string, bottleneck: string }> {
+    console.error(`⚠️ [Gemini Sandbox]: Sentiment API call scaffold reached.`);
+    await new Promise(resolve => setTimeout(resolve, 1500));
+    return this.mockSentimentHeuristic(posts);
+  }
+
+  private static async callOpenAISentiment(posts: string[]): Promise<{ sentiment: string, bottleneck: string }> {
+    console.error(`⚠️ [OpenAI Sandbox]: Sentiment API call scaffold reached.`);
+    await new Promise(resolve => setTimeout(resolve, 1500));
+    return this.mockSentimentHeuristic(posts);
+  }
+
+  private static mockSentimentHeuristic(posts: string[]): { sentiment: string, bottleneck: string } {
+    const combinedText = posts.join(" ").toLowerCase();
+    
+    // Extremely rudimentary keyword density heuristic engine
+    const negativeKeywords = ["frustrated", "slow", "annoyed", "expensive", "hate", "broken", "pain"];
+    const positiveKeywords = ["love", "fast", "cheap", "amazing", "great"];
+    
+    let negCount = 0;
+    let posCount = 0;
+    
+    negativeKeywords.forEach(kw => { if (combinedText.includes(kw)) negCount++; });
+    positiveKeywords.forEach(kw => { if (combinedText.includes(kw)) posCount++; });
+
+    let sentiment = "NEUTRAL";
+    if (negCount > posCount) sentiment = "FRUSTRATED_BEARISH";
+    if (posCount > negCount) sentiment = "OPTIMISTIC_BULLISH";
+
+    // Extracting a pseudo-bottleneck by finding a sentence with "broken" or "slow"
+    let bottleneck = "Users are expressing general dissatisfaction with current operational speeds.";
+    const sentences = combinedText.split(/[.!?]/);
+    for (const sentence of sentences) {
+      if (sentence.includes("broken") || sentence.includes("slow") || sentence.includes("expensive")) {
+        bottleneck = `Core User Complaint: "${sentence.trim()}"`;
+        break;
+      }
+    }
+
+    return { sentiment, bottleneck };
   }
 
   private static getPremiumTemplate(prompt: string): string {

@@ -1,4 +1,5 @@
 import { BiochemicalBus, BiochemicalHormone } from "./biochemical-bus.js";
+import { SecurityShieldL7 } from "./security-shield.js";
 
 export interface SisterDomainPeer {
   nodeId: string;
@@ -55,7 +56,8 @@ export class P2pMeshEngine {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
-            "X-Network-Auth-Token": peer.handshakeToken
+            "X-Network-Auth-Token": peer.handshakeToken,
+            "X-Cluster-Signature": SecurityShieldL7.generateSignature(exportPayload)
           },
           body: JSON.stringify(exportPayload),
           signal: AbortSignal.timeout(6000) // 6-second drop deadline

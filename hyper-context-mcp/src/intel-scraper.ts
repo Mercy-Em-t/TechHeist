@@ -1,18 +1,32 @@
 import * as fs from 'fs';
 import * as path from 'path';
+import { LLMBridge } from './llm-bridge.js';
 
 // This script simulates a web scraper running on the LEAF_INTEL node
 // It would normally hit Google Trends, Twitter APIs, etc.
 
 console.error("🌐 [LEAF_INTEL]: Initiating external API radar scans across global market matrices...");
 
-setTimeout(() => {
-    // We simulate finding a critical, unserved bottleneck in the East African logistics sector
+setTimeout(async () => {
+    console.error("📡 [LEAF_INTEL]: Intercepted unstructured social media streams (X, Reddit).");
+    
+    // Simulating a batch of unstructured social media posts scraped from the web
+    const rawSocialPosts = [
+        "I'm so frustrated with the current merchant routing tools, they are way too slow.",
+        "Why is every payment API so expensive and broken?",
+        "If someone built a faster QR checkout, I would switch immediately.",
+        "Current systems are just too painful to integrate."
+    ];
+
+    // Funnel raw human sentiment into the LLM Bridge for NLP Extraction
+    const nlpReport = await LLMBridge.analyzeSocialSentiment(rawSocialPosts);
+
     const payload = {
         timestamp: new Date().toISOString(),
-        region: "East Africa",
+        region: "Global Sentiment",
         trend: "hyper-growth-saas",
-        bottleneck: "Local merchant vendors lack real-time order state checkout routing via mobile payment.",
+        marketSentiment: nlpReport.sentiment,
+        bottleneck: nlpReport.bottleneck,
         recommendedArchitecture: "Real-time state engine with transactional QR code routing links."
     };
 

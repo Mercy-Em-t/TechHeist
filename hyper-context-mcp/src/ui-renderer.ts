@@ -1,6 +1,7 @@
 import * as http from "http";
 import * as fs from "fs";
 import { ExecutionRuntime } from "./execution-runtime.js";
+import { SecurityShieldL7 } from "./security-shield.js";
 
 // Helper to parse incoming asynchronous body payloads
 async function getJsonBody(req: http.IncomingMessage): Promise<any> {
@@ -75,6 +76,20 @@ export class UiRendererDashboard {
       if (req.url === "/api/network/ingest-signal" && req.method === "POST") {
         const incomingHormone = await getJsonBody(req);
         
+        // --- L7 SHIELD VALIDATION ---
+        const signature = req.headers["x-cluster-signature"] as string;
+        if (!SecurityShieldL7.verifyPacketAuthenticity(incomingHormone, signature)) {
+          console.error("🚨 [L7 Shield]: Dropping inbound signal due to invalid cryptographic signature.");
+          res.writeHead(403, { ...headers, "Content-Type": "application/json" });
+          res.end(JSON.stringify({ success: false, message: "L7 Shield: Cryptographic signature mismatch. Packet dropped." }));
+          return;
+        }
+
+        // Sanitize Application Layer Input
+        if (incomingHormone.payload && typeof incomingHormone.payload.rawMessage === "string") {
+          incomingHormone.payload.rawMessage = SecurityShieldL7.sanitizeInput(incomingHormone.payload.rawMessage);
+        }
+
         console.error(`\n🧬 [Inter-Domain Ingestion]: Absorbing external biological signal: ${incomingHormone.type}`);
         
         // Feed the incoming external web wave straight into our local system's bloodstream!

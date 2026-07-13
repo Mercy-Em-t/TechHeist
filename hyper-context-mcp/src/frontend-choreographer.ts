@@ -6,7 +6,7 @@ export class FrontendChoreographer {
    * Directly intercepts and reskins the target SaaS application css variables.
    */
   public static applyTheme(themeColor: string) {
-    const cssFilePath = path.join(process.cwd(), "spawned-cells/saas-mint-target/src/index.css");
+    const cssFilePath = path.join(process.cwd(), "../spawned-cells/saas-mint-target/src/index.css");
     
     if (!fs.existsSync(cssFilePath)) {
       console.error(`[Frontend Choreographer]: Target SaaS not found at ${cssFilePath}. Skipping SaaS reskin.`);
