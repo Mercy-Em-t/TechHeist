@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Hyper-Context Operational Inventory</title>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;800&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg: #0b0c10;
+      --card-bg: rgba(31, 40, 51, 0.4);
+      --border: rgba(102, 252, 241, 0.2);
+      --accent: #66fcf1;
+      --text: #c5c6c7;
+      --heading: #ffffff;
+      --scaffold: #f1c40f;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: 'Outfit', sans-serif;
+      background: radial-gradient(circle at top left, #1f2833 0%, var(--bg) 100%);
+      color: var(--text);
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      overflow-x: hidden;
+    }
+    header {
+      padding: 2rem;
+      background: rgba(11, 12, 16, 0.8);
+      backdrop-filter: blur(10px);
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    h1 {
+      color: var(--accent);
+      font-weight: 800;
+      font-size: 1.8rem;
+      text-transform: uppercase;
+      letter-spacing: 2px;
+    }
+    main { padding: 3rem; flex-grow: 1; }
+    h2 { color: var(--heading); font-size: 1.5rem; margin-bottom: 1.5rem; border-left: 4px solid var(--accent); padding-left: 10px; }
+    .section-title.scaffold { border-left-color: var(--scaffold); margin-top: 3rem; }
+    
+    .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 2rem; }
+    
+    .card {
+      background: var(--card-bg);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 2rem;
+      backdrop-filter: blur(12px);
+      transition: transform 0.3s ease, box-shadow 0.3s ease, border-color 0.3s ease;
+      position: relative;
+      overflow: hidden;
+    }
+    .card.scaffold-card { border-color: rgba(241, 196, 15, 0.2); }
+    .card.scaffold-card::before { background: linear-gradient(90deg, transparent, var(--scaffold), transparent); }
+    .card.scaffold-card:hover { border-color: rgba(241, 196, 15, 0.5); }
+    
+    .card::before {
+      content: ''; position: absolute; top: 0; left: 0; width: 100%; height: 4px;
+      background: linear-gradient(90deg, transparent, var(--accent), transparent);
+      opacity: 0; transition: opacity 0.3s ease;
+    }
+    .card:hover { transform: translateY(-5px); box-shadow: 0 10px 30px rgba(0,0,0,0.5); border-color: rgba(102, 252, 241, 0.5); }
+    .card:hover::before { opacity: 1; }
+    
+    .card-title { color: var(--heading); font-size: 1.3rem; font-weight: 600; margin-bottom: 0.5rem; }
+    .card-subtitle { font-size: 0.8rem; color: var(--accent); margin-bottom: 1rem; font-family: monospace; text-transform: uppercase; }
+    .scaffold-card .card-subtitle { color: var(--scaffold); }
+    .card-content { font-size: 0.95rem; line-height: 1.6; }
+    
+    .status-badge {
+      position: absolute; top: 1.5rem; right: 1.5rem; font-size: 0.7rem; font-weight: 800; padding: 4px 10px; border-radius: 20px; text-transform: uppercase; letter-spacing: 1px;
+    }
+    .status-active { background: rgba(102, 252, 241, 0.1); color: var(--accent); border: 1px solid var(--accent); }
+    .status-pending { background: rgba(241, 196, 15, 0.1); color: var(--scaffold); border: 1px solid var(--scaffold); }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>HYPER-CONTEXT // WEAPONRY INVENTORY</h1>
+  </header>
+  <main>
+    <h2 class="section-title">Deployed Active Systems</h2>
+    <div class="grid">
+      <div class="card">
+        <div class="status-badge status-active">LIVE</div>
+        <div class="card-title">Autonomous Self-Healing Pipeline</div>
+        <div class="card-subtitle">src/state-machine.ts</div>
+        <div class="card-content">Long-running state machine capable of orchestrating complex steps and rewriting execution flags or code blocks upon failure footprints without crashing.</div>
+      </div>
+      <div class="card">
+        <div class="status-badge status-active">LIVE</div>
+        <div class="card-title">Living Knowledge Graph</div>
+        <div class="card-subtitle">network-state.json</div>
+        <div class="card-content">A persistent relational topology store acting as the brain. Explicitly links architectures together so agents inherently understand boundaries and history.</div>
+      </div>
+      <div class="card">
+        <div class="status-badge status-active">LIVE</div>
+        <div class="card-title">Visual Command Room</div>
+        <div class="card-subtitle">src/ui-renderer.ts</div>
+        <div class="card-content">Zero-dependency visual server dashboard providing an overhead dynamic view of graph topologies and execution traces in real time.</div>
+      </div>
+      <div class="card">
+        <div class="status-badge status-active">LIVE</div>
+        <div class="card-title">Ambient Sentinel</div>
+        <div class="card-subtitle">src/file-monitor.ts</div>
+        <div class="card-content">Background file-system watcher actively tracking workspace modifications, logging alerts, and triggering autonomous execution sequences instantly.</div>
+      </div>
+      <div class="card">
+        <div class="status-badge status-active">LIVE</div>
+        <div class="card-title">Live Infrastructure Bridge</div>
+        <div class="card-subtitle">src/infra-bridge.ts</div>
+        <div class="card-content">Leverages the MiddlewareRouter to interface our local server to a real database or external webhooks, allowing ambient reactions to real-world internet events.</div>
+      </div>
+    </div>
+
+    <h2 class="section-title scaffold">Scaffolded Future Targets (Awaiting Deployment)</h2>
+    <div class="grid">
+      <div class="card scaffold-card">
+        <div class="status-badge status-pending">NEXT TARGET</div>
+        <div class="card-title">Expanded External Targets</div>
+        <div class="card-subtitle">Scaffolded Target</div>
+        <div class="card-content">Real server deployments, an advanced inbound webhook HTTP listener, and concurrent multi-DB polling integrations for true external autonomy.</div>
+      </div>
+      <div class="card scaffold-card">
+        <div class="status-badge status-pending">QUEUED</div>
+        <div class="card-title">Deepened Front-End Layer</div>
+        <div class="card-subtitle">Scaffolded Target</div>
+        <div class="card-content">Interactive node dragging, real-time WebSocket streaming of autonomous execution traces, and manual execution triggers embedded in the UI.</div>
+      </div>
+    </div>
+  </main>
+</body>
+</html>

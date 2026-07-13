@@ -1,0 +1,13 @@
+# Dependency directories
+node_modules/
+
+# Compiled production trees
+dist/
+
+# Local cell memory state networks (Keep state local!)
+network-state.json
+network-state-*.json
+
+# Operating system artifacts
+.DS_Store
+Thumbs.db

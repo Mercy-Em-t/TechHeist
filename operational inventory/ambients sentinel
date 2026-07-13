@@ -1,0 +1,4 @@
+4. The Ambient Sentinel (src/file-monitor.ts)
+What it is: A background file-system watcher hooked directly into the project directory.
+
+How to leverage it: The system has eyes on your editor. The second you update a custom file, create a template, or modify a script, the sentinel catches the change, extracts the metadata, and logs an alert or triggers a dependent autonomous sequence instantly.

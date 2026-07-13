@@ -1,0 +1,16 @@
+{
+  "mcpServers": {
+    "hyper-context": {
+      "command": "node",
+      "args": [
+        "--import",
+        "tsx",
+        "src/index.ts"
+      ],
+      "cwd": "D:\\TechHeist v1\\hyper-context-mcp",
+      "env": {
+        "NODE_ENV": "development"
+      }
+    }
+  }
+}

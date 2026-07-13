@@ -1,0 +1,4 @@
+3. The Visual Command Room Room (src/ui-renderer.ts)
+What it is: A zero-dependency visual server dashboard running locally at http://localhost:8080.
+
+How to leverage it: This is your overhead view of the heist. As the autonomous loops run and the ambient monitor catches workspace adjustments, the graph updates dynamically in your browser. You can physically watch your system scale, log events, and trace execution branches in real time.

@@ -1,0 +1,4 @@
+2. The Living Knowledge Graph (network-state.json)
+What it is: A machine-readable, persistent relational topology store.
+
+How to leverage it: Instead of traditional documentation, this acts as the "brain." Every time we create a new technical blueprint, the system explicitly links it to existing architectures (depends_on, supercharges). When an agent hooks into your workspace, it reads this file and instantly understands the structural history, boundaries, and logic of your entire codebase without needing context windows filled with code-dumps.

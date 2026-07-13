@@ -1,0 +1,31 @@
+{
+  "id": "protocol-intel-mesh",
+  "name": "Autonomous Web Intelligence Collector",
+  "type": "intel-mesh",
+  "workspace": "../spawned-cells/intel-mesh-collector",
+  "capabilities": ["data-scraping", "trend-analysis", "hormone-secretion"],
+  "requirements": {
+    "hard": [],
+    "soft": ["curl"]
+  },
+  "executionGraph": [
+    {
+      "id": "allocate-intel-workspace",
+      "command": "node -e \"const fs = require('fs'); fs.mkdirSync('../spawned-cells/intel-mesh-collector', {recursive: true});\"",
+      "description": "Allocating dedicated collector matrix...",
+      "workspace": "."
+    },
+    {
+      "id": "fetch-global-data",
+      "command": "node ../../hyper-context-mcp/dist/intel-scraper.js",
+      "description": "Engaging external data scraping sequences...",
+      "dependsOn": ["allocate-intel-workspace"]
+    },
+    {
+      "id": "analyze-trends",
+      "llmPrompt": "Analyze the fetched JSON market data and identify three primary technical architectural trends. Prepare output for biological digestion.",
+      "description": "Using LLM Bridge to cross-reference intelligence...",
+      "dependsOn": ["fetch-global-data"]
+    }
+  ]
+}

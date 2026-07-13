@@ -1,0 +1,43 @@
+{
+  "id": "protocol-saas-mint",
+  "name": "Autonomous SaaS Factory",
+  "type": "saas-mint",
+  "workspace": "../spawned-cells/saas-mint-target",
+  "capabilities": ["scaffold", "llm-generation", "build"],
+  "requirements": {
+    "hard": [],
+    "soft": []
+  },
+  "executionGraph": [
+    {
+      "id": "allocate-workspace",
+      "command": "node -e \"const fs = require('fs'); fs.mkdirSync('../spawned-cells/saas-mint-target', {recursive: true});\"",
+      "description": "Allocating dedicated cell matrix...",
+      "workspace": "."
+    },
+    {
+      "id": "scaffold-template",
+      "command": "npm create vite@latest . -- --template react-ts",
+      "description": "Bootstrapping web foundation via Vite...",
+      "dependsOn": ["allocate-workspace"]
+    },
+    {
+      "id": "install-deps",
+      "command": "npm install",
+      "description": "Installing biological node dependencies...",
+      "dependsOn": ["scaffold-template"]
+    },
+    {
+      "id": "ai-code-synthesis",
+      "llmPrompt": "Generate a sleek, dark-mode React application based on this biological prompt: {{SAAS_PROMPT}}",
+      "description": "Engaging LLM Bridge to synthesize prompt into logic...",
+      "dependsOn": ["install-deps"]
+    },
+    {
+      "id": "compile-build",
+      "command": "npm run build",
+      "description": "Compiling final application executable...",
+      "dependsOn": ["ai-code-synthesis"]
+    }
+  ]
+}
