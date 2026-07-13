@@ -1,0 +1,26 @@
+we will need MCP:
+
+to solve the issue of isolated ai tools
+
+MCP flips this. Developed as an open standard, it acts like a universal USB port for AI. Instead of writing separate code for every database, file system, or web service, MCP creates a secure, uniform protocol that lets an intelligence seamlessly read data (Resources), execute code (Tools), and follow logic (Prompts) across entirely different environments.
+
+By leveraging MCP, we don't have to spend years building infrastructure from scratch. We use it as our backdoor to instantly plug into everything that already exists, but we wire it up to think and act with a 2035 mindset.
+
+record tahat our end goal is autonomous systems and that MCP is just one of the tools to get there.
+
+building a Custom MCP Server for Hyper-Context.
+
+Instead of a standard database that just hands over raw text when searched, this server will expose a living, machine-readable Graph of Knowledge. Every time you or the system learns something, updates a strategy, or maps out a technical blueprint, this server links it contextually to everything else.
+
+required:
+atrchitecture
+mcp server schemas
+protocol methods
+backend logic
+
+set up the repository
+spin up the server
+test the connections
+inject real world strategies and schema in its models
+
+must be blindingly fast, highly modular, and easily extensible
