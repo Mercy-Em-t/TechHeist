@@ -47,14 +47,14 @@ export class LLMBridge {
       
       // Also write an entrypoint file just in case it's missing
       const mainCode = `
-import React from 'react'
+import { StrictMode } from 'react'
 import ReactDOM from 'react-dom/client'
 import App from './App.tsx'
 
 ReactDOM.createRoot(document.getElementById('root')!).render(
-  <React.StrictMode>
+  <StrictMode>
     <App />
-  </React.StrictMode>,
+  </StrictMode>,
 )
 `;
       fs.writeFileSync(mainPath, mainCode, "utf-8");
@@ -162,7 +162,7 @@ ReactDOM.createRoot(document.getElementById('root')!).render(
 
   private static getPremiumTemplate(prompt: string): string {
     return `
-import React from 'react';
+
 
 export default function App() {
   return (
