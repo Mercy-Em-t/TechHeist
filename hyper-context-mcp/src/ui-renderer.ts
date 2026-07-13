@@ -1,11 +1,12 @@
 import * as http from "http";
 import * as fs from "fs";
 import { ExecutionRuntime } from "./execution-runtime.js";
+import { P2PBridge } from "./p2p-bridge.js";
 
 export class UiRendererDashboard {
   private server: http.Server | null = null;
 
-  public launchDashboard(stateFilePath: string, port: number = 8080) {
+  public launchDashboard(stateFilePath: string, port: number = 8080, p2pBridge?: P2PBridge) {
     this.server = http.createServer(async (req, res) => {
       
       // CORS headers to ensure fluid API communication across proxies
@@ -21,6 +22,17 @@ export class UiRendererDashboard {
         return;
       }
 
+      // Helper to parse JSON body
+      const parseBody = (request: http.IncomingMessage): Promise<any> => {
+        return new Promise((resolve) => {
+          let body = '';
+          request.on('data', chunk => body += chunk.toString());
+          request.on('end', () => {
+            try { resolve(JSON.parse(body)); } catch (e) { resolve({}); }
+          });
+        });
+      };
+
       // Endpoint 1: Send the raw network layout state to the dashboard UI
       if (req.url === "/api/topology" && req.method === "GET") {
         res.writeHead(200, { ...headers, "Content-Type": "application/json" });
@@ -28,6 +40,57 @@ export class UiRendererDashboard {
           res.end(fs.readFileSync(stateFilePath, "utf-8"));
         } else {
           res.end(JSON.stringify({ nodes: {}, edges: [] }));
+        }
+        return;
+      }
+
+      // Endpoint: Incoming P2P Handshake from external sibling
+      if (req.url === "/api/network/handshake" && req.method === "POST") {
+        const payload = await parseBody(req);
+        if (p2pBridge && p2pBridge.evaluateHandshake(payload.token, payload.peerId, payload.domainUrl)) {
+          // If successful, log the connection
+          if (fs.existsSync(stateFilePath)) {
+            const memoryNetwork = JSON.parse(fs.readFileSync(stateFilePath, "utf-8"));
+            memoryNetwork.nodes[payload.peerId] = {
+              id: payload.peerId,
+              title: `Sibling Node Connected`,
+              content: `Established P2P bridge with external domain: ${payload.domainUrl}`,
+              tags: ["p2p", "external-domain", "sibling"]
+            };
+            fs.writeFileSync(stateFilePath, JSON.stringify(memoryNetwork, null, 2));
+          }
+          res.writeHead(200, { ...headers, "Content-Type": "application/json" });
+          res.end(JSON.stringify({ success: true, message: "P2P Handshake Accepted" }));
+        } else {
+          res.writeHead(403, { ...headers, "Content-Type": "application/json" });
+          res.end(JSON.stringify({ success: false, message: "P2P Handshake Rejected (Invalid Token)" }));
+        }
+        return;
+      }
+
+      // Endpoint: Outgoing manual dial to connect a peer
+      if (req.url === "/api/actions/connect-peer" && req.method === "POST") {
+        const payload = await parseBody(req);
+        if (p2pBridge && payload.targetUrl) {
+          const success = await p2pBridge.establishHandshake(payload.targetUrl);
+          
+          if (success && fs.existsSync(stateFilePath)) {
+             const memoryNetwork = JSON.parse(fs.readFileSync(stateFilePath, "utf-8"));
+             const peerId = `hyper-node-remote-${Date.now()}`;
+             memoryNetwork.nodes[peerId] = {
+                id: peerId,
+                title: `Sibling Node Dialed`,
+                content: `Successfully dialed and connected to external domain: ${payload.targetUrl}`,
+                tags: ["p2p", "outbound", "sibling"]
+             };
+             fs.writeFileSync(stateFilePath, JSON.stringify(memoryNetwork, null, 2));
+          }
+
+          res.writeHead(200, { ...headers, "Content-Type": "application/json" });
+          res.end(JSON.stringify({ success, message: success ? "Peer Handshake Dialed." : "Peer Dial Failed." }));
+        } else {
+          res.writeHead(400, { ...headers, "Content-Type": "application/json" });
+          res.end(JSON.stringify({ success: false, message: "Invalid payload or P2P Bridge missing." }));
         }
         return;
       }
@@ -97,6 +160,10 @@ export class UiRendererDashboard {
             <button class="action-btn" onclick="triggerAction('/api/actions/github-deploy')">Deploy via GitHub Actions</button>
             <button class="action-btn secondary" onclick="triggerAction('/api/actions/run-diagnostics')">Force Run Diagnostics</button>
             
+            <h2 style="margin-top: 20px;">INTER-DOMAIN P2P</h2>
+            <input type="text" id="peer-url" placeholder="http://remote-node:8080" style="width:100%; padding: 8px; margin-bottom: 10px; background: #050508; color: #38bdf8; border: 1px solid #1e293b; border-radius: 4px; box-sizing: border-box;" />
+            <button class="action-btn" style="border-color: #10b981; color: #10b981;" onclick="dialPeer()">Connect Sibling Node</button>
+            
             <h2 style="margin-top: 20px;">SYSTEM STATUS REPORT</h2>
             <div id="terminal-feed">> System standing by for manual overrides...</div>
           </div>
@@ -119,6 +186,22 @@ export class UiRendererDashboard {
             function printLog(msg) {
               logFeed.innerHTML += \`<br>> \${msg}\`;
               logFeed.scrollTop = logFeed.scrollHeight;
+            }
+
+            async function dialPeer() {
+              const targetUrl = document.getElementById('peer-url').value;
+              printLog("Dialing outbound peer domain: " + targetUrl + "...");
+              try {
+                const res = await fetch('/api/actions/connect-peer', { 
+                  method: 'POST',
+                  headers: { 'Content-Type': 'application/json' },
+                  body: JSON.stringify({ targetUrl })
+                });
+                const data = await res.json();
+                printLog("Handshake back: " + data.message);
+              } catch (e) {
+                printLog("Error: P2P Dial failed.");
+              }
             }
 
             async function triggerAction(endpoint) {

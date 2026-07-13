@@ -24,6 +24,7 @@ import { ProtocolLoader } from "./protocol-loader.js";
 import { BiochemicalBus, BiochemicalHormone } from "./biochemical-bus.js";
 import { DnaSequencer, MacroMissionBlueprint } from "./dna-sequencer.js";
 import { SensoryGateway } from "./sensory-gateway.js";
+import { P2PBridge } from "./p2p-bridge.js";
 
 // Load secure environment keys immediately upon startup
 EnvVault.load();
@@ -227,12 +228,13 @@ if (CURRENT_CELL_ROLE === "LEAF_INTEL") {
   }, 15000);
 }
 
-// Initialize our two new operational engines right out of the block!
+// Initialize our operational engines right out of the block!
 const ambientMonitor = new FileSystemMonitor();
 const UICommandRoom = new UiRendererDashboard();
+const p2pBridge = new P2PBridge();
 
 // Start the UI Server Room mapping to this cell's individual memory state
-UICommandRoom.launchDashboard(STATE_FILE_PATH, PORT_ALLOCATION);
+UICommandRoom.launchDashboard(STATE_FILE_PATH, PORT_ALLOCATION, p2pBridge);
 
 // Start listening ambiently to file adjustments inside the workspace execution context
 ambientMonitor.startMonitoring(process.cwd(), (modifiedFile) => {
