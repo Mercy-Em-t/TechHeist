@@ -3,9 +3,8 @@ import * as fs from "fs";
 import { ExecutionRuntime } from "./execution-runtime.js";
 import { SecurityShieldL7 } from "./security-shield.js";
 
-// Helper to parse incoming asynchronous body payloads
 async function getJsonBody(req: http.IncomingMessage): Promise<any> {
-  return new Promise((resolve, reject) => {
+  return new Promise((resolve) => {
     let body = "";
     req.on("data", chunk => body += chunk);
     req.on("end", () => {
@@ -21,11 +20,10 @@ export class UiRendererDashboard {
   public launchDashboard(stateFilePath: string, port: number = 8080) {
     this.server = http.createServer(async (req, res) => {
       
-      // CORS headers to ensure fluid API communication across proxies
       const headers = {
         "Access-Control-Allow-Origin": "*",
         "Access-Control-Allow-Methods": "OPTIONS, POST, GET",
-        "Access-Control-Allow-Headers": "Content-Type"
+        "Access-Control-Allow-Headers": "Content-Type, X-Hub-Signature-256"
       };
 
       if (req.method === "OPTIONS") {
@@ -34,11 +32,11 @@ export class UiRendererDashboard {
         return;
       }
 
-      // Pull in the peer networking controller classes
       const { P2pMeshEngine } = await import("./p2p-mesh.js");
       const { BiochemicalBus } = await import("./biochemical-bus.js");
+      const { SensoryGateway } = await import("./sensory-gateway.js");
 
-      // Endpoint 1: Send the raw network layout state to the dashboard UI
+      // Endpoint 1: Read Topology State Matrix
       if (req.url === "/api/topology" && req.method === "GET") {
         res.writeHead(200, { ...headers, "Content-Type": "application/json" });
         if (fs.existsSync(stateFilePath)) {
@@ -49,13 +47,55 @@ export class UiRendererDashboard {
         return;
       }
 
-      // Route A: The Inter-Domain Handshake Doorway
+      // Endpoint 2: Unified Conversational Input (Gemini-Style Interaction Terminal)
+      if (req.url === "/api/sensory/directive" && req.method === "POST") {
+        const body = await getJsonBody(req);
+        
+        // LAYER 7 SHIELD: Clean and neutralize the raw text input string instantly
+        const sanitizedDirective = SecurityShieldL7.sanitizeInput(body.directive || "");
+        
+        if (!sanitizedDirective) {
+          res.writeHead(400, headers);
+          res.end(JSON.stringify({ error: "Empty or highly anomalous textual signature intercepted." }));
+          return;
+        }
+
+        const report = await SensoryGateway.processDirectIntent(sanitizedDirective);
+        res.writeHead(200, { ...headers, "Content-Type": "application/json" });
+        res.end(JSON.stringify({ success: true, message: report }));
+        return;
+      }
+
+      // Endpoint 3: Secure Ingestion for Inter-Domain Sister Cell Whispers
+      if (req.url === "/api/network/ingest-signal" && req.method === "POST") {
+        const incomingHormone = await getJsonBody(req);
+        const incomingSignature = req.headers["x-hub-signature-256"] as string;
+
+        // LAYER 7 SHIELD: Cryptographic authentication check using our master secret key
+        const isAuthentic = SecurityShieldL7.verifyPacketAuthenticity(incomingHormone, incomingSignature);
+
+        if (!isAuthentic) {
+          console.error(`🚨 [SECURITY BREACH ALERT]: Untrusted or altered signal dropped at Layer 7 from IP: ${req.socket.remoteAddress}`);
+          res.writeHead(401, headers);
+          res.end(JSON.stringify({ error: "Access Denied. Cryptographic packet signature verification failed." }));
+          return;
+        }
+        
+        console.error(`🧬 [Secured Ingestion]: Verified signature. Absorbing external signal: ${incomingHormone.type}`);
+        BiochemicalBus.distributeToNervousSystem(incomingHormone);
+
+        res.writeHead(200, { ...headers, "Content-Type": "application/json" });
+        res.end(JSON.stringify({ success: true, message: "Signal authenticated and processed safely." }));
+        return;
+      }
+
+      // Endpoint 4: Handle P2P Network Handshake Requests
       if (req.url === "/api/network/handshake" && req.method === "POST") {
         const body = await getJsonBody(req);
         
         if (!body.nodeId || !body.domainUrl) {
           res.writeHead(400, headers);
-          res.end(JSON.stringify({ error: "Invalid systemic connection payload profile parameters." }));
+          res.end(JSON.stringify({ error: "Invalid systemic connection profile configuration parameters." }));
           return;
         }
 
@@ -72,61 +112,7 @@ export class UiRendererDashboard {
         return;
       }
 
-      // Route B: Ingestion portal for external sister cell whispers
-      if (req.url === "/api/network/ingest-signal" && req.method === "POST") {
-        const incomingHormone = await getJsonBody(req);
-        
-        // --- L7 SHIELD VALIDATION ---
-        const signature = req.headers["x-cluster-signature"] as string;
-        if (!SecurityShieldL7.verifyPacketAuthenticity(incomingHormone, signature)) {
-          console.error("🚨 [L7 Shield]: Dropping inbound signal due to invalid cryptographic signature.");
-          res.writeHead(403, { ...headers, "Content-Type": "application/json" });
-          res.end(JSON.stringify({ success: false, message: "L7 Shield: Cryptographic signature mismatch. Packet dropped." }));
-          return;
-        }
-
-        // Sanitize Application Layer Input
-        if (incomingHormone.payload && typeof incomingHormone.payload.rawMessage === "string") {
-          incomingHormone.payload.rawMessage = SecurityShieldL7.sanitizeInput(incomingHormone.payload.rawMessage);
-        }
-
-        console.error(`\n🧬 [Inter-Domain Ingestion]: Absorbing external biological signal: ${incomingHormone.type}`);
-        
-        // Feed the incoming external web wave straight into our local system's bloodstream!
-        BiochemicalBus.distributeToNervousSystem(incomingHormone);
-
-        res.writeHead(200, { ...headers, "Content-Type": "application/json" });
-        res.end(JSON.stringify({ success: true, message: "Signal distributed to local neural branches." }));
-        return;
-      }
-
-      // Endpoint 2: Trigger GitHub Actions Deployment Workflow Action
-      if (req.url === "/api/actions/github-deploy" && req.method === "POST") {
-        console.error("🚀 [UI Command Intercept]: Dispatched GitHub Actions remote workflow invocation...");
-        
-        // Command to trigger a manual GitHub repository dispatch event via curl
-        // In your production repo, swap with your actual GitHub Organization, Repository name, and personal access token
-        const githubCmd = `curl -X POST -H "Accept: application/vnd.github+json" -H "Authorization: Bearer \${GITHUB_TOKEN}" https://api.github.com/repos/your-username/hyper-context-mcp/dispatches -d '{"event_type": "manual_trigger_deployment"}'`;
-        
-        // Run it locally through our self-healing runtime framework
-        const runReport = await ExecutionRuntime.runCommand("node -e 'console.log(\"Simulating active GitHub Actions REST dispatch packet execution loop... Successful handshake.\")'");
-
-        res.writeHead(200, { ...headers, "Content-Type": "application/json" });
-        res.end(JSON.stringify({ success: true, message: "GitHub Actions signal dispatched.", log: runReport }));
-        return;
-      }
-
-      // Endpoint 3: Run Automated Manualness (Forced Global Diagnostic Run)
-      if (req.url === "/api/actions/run-diagnostics" && req.method === "POST") {
-        console.error("🛠️ [UI Command Intercept]: Forced internal system diagnostic execution loop initialized.");
-        const diagnosticReport = await ExecutionRuntime.runCommand("npm run build || echo 'Build context verified.'");
-
-        res.writeHead(200, { ...headers, "Content-Type": "application/json" });
-        res.end(JSON.stringify({ success: true, message: "Workspace diagnostics cycle absolute.", log: diagnosticReport }));
-        return;
-      }
-
-      // Main Front-End View Document
+      // Catch-all: Server Static Dashboard View Interface Document
       res.writeHead(200, { "Content-Type": "text/html" });
       res.end(`
         <!DOCTYPE html>
@@ -135,139 +121,76 @@ export class UiRendererDashboard {
           <meta charset="UTF-8">
           <title>Sovereign Node Hyper-Context Command Room</title>
           <style>
-            body { margin: 0; background-color: #090a0f; color: #e2e8f0; font-family: system-ui, sans-serif; display: flex; height: 100vh; overflow: hidden; }
-            
-            /* Sidebar Panel for Manual Controls */
-            #control-panel { width: 320px; background: #11141d; border-right: 1px solid #1e293b; display: flex; flex-direction: column; padding: 20px; box-sizing: border-box; }
-            h2 { font-size: 1.1rem; color: #38bdf8; letter-spacing: 0.05em; margin-top: 0; border-bottom: 1px solid #1e293b; padding-bottom: 10px; }
-            .action-btn { background: #1e293b; border: 1px solid #38bdf8; color: #38bdf8; padding: 12px; border-radius: 6px; font-weight: 600; cursor: pointer; width: 100%; margin-bottom: 12px; transition: all 0.2s ease; font-size: 0.85rem; text-transform: uppercase; letter-spacing: 0.05em; }
-            .action-btn:hover { background: #38bdf8; color: #090a0f; box-shadow: 0 0 15px rgba(56, 189, 248, 0.4); }
-            .action-btn.secondary { border-color: #a855f7; color: #a855f7; }
-            .action-btn.secondary:hover { background: #a855f7; color: #090a0f; box-shadow: 0 0 15px rgba(168, 85, 247, 0.4); }
-            #terminal-feed { flex-grow: 1; background: #050508; border: 1px solid #1e293b; border-radius: 6px; padding: 10px; font-family: monospace; font-size: 0.75rem; color: #10b981; overflow-y: auto; max-height: 250px; }
-            
-            /* Main Workspace Visualization Canvas */
-            #main-content { flex-grow: 1; display: flex; flex-direction: column; position: relative; }
-            header { padding: 18px 25px; background: #11141d; border-bottom: 1px solid #1e293b; display: flex; justify-content: space-between; align-items: center; }
-            h1 { margin: 0; font-size: 1.2rem; letter-spacing: 0.05em; color: #f8fafc; }
-            #graph-view { flex-grow: 1; padding: 25px; overflow-y: auto; background-image: radial-gradient(#1e293b 1px, transparent 1px); background-size: 24px 24px; }
-            .card { background: #11141d; border: 1px solid #1e293b; padding: 18px; border-radius: 8px; margin-bottom: 15px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.3); }
-            .node-title { color: #f8fafc; font-weight: 600; margin-bottom: 8px; }
-            .node-content { font-size: 0.9rem; color: #94a3b8; line-height: 1.5; }
-            .tag { display: inline-block; background: #1e293b; color: #38bdf8; font-size: 0.75rem; padding: 2px 8px; border-radius: 4px; margin-right: 6px; margin-top: 10px; }
+            body { margin: 0; background-color: #06070a; color: #f1f5f9; font-family: system-ui, sans-serif; display: flex; height: 100vh; overflow: hidden; }
+            #control-panel { width: 340px; background: #0b0d14; border-right: 1px solid #1e293b; display: flex; flex-direction: column; padding: 25px; box-sizing: border-box; justify-content: space-between; }
+            h2 { font-size: 0.9rem; color: #38bdf8; letter-spacing: 0.1em; margin-top: 0; text-transform: uppercase; padding-bottom: 8px; border-bottom: 1px solid #1e293b; }
+            #terminal-feed { flex-grow: 1; background: #020305; border: 1px solid #1e293b; border-radius: 6px; padding: 12px; font-family: monospace; font-size: 0.75rem; color: #10b981; overflow-y: auto; margin-bottom: 15px; box-shadow: inset 0 2px 4px rgba(0,0,0,0.6); }
+            .input-box { background: #111524; border: 1px solid #1e293b; color: #f1f5f9; padding: 12px; border-radius: 6px; font-size: 0.85rem; width: 100%; box-sizing: border-box; outline: none; transition: border 0.2s; }
+            .input-box:focus { border-color: #38bdf8; }
+            #main-content { flex-grow: 1; display: flex; flex-direction: column; background-image: radial-gradient(#171e2e 1px, transparent 1px); background-size: 20px 20px; }
+            header { padding: 20px 30px; background: #0b0d14; border-bottom: 1px solid #1e293b; display: flex; justify-content: space-between; align-items: center; }
+            h1 { margin: 0; font-size: 1.1rem; letter-spacing: 0.05em; font-weight: 600; color: #f8fafc; }
+            #graph-view { flex-grow: 1; padding: 30px; overflow-y: auto; }
+            .card { background: #0b0d14; border: 1px solid #1e293b; padding: 20px; border-radius: 8px; margin-bottom: 15px; border-left: 4px solid #38bdf8; }
+            .node-title { font-weight: 600; color: #f8fafc; font-size: 0.95rem; margin-bottom: 6px; }
+            .node-content { font-size: 0.85rem; color: #94a3b8; line-height: 1.6; white-space: pre-wrap; }
           </style>
         </head>
         <body>
-
-          <!-- Control Room Left Panel -->
           <div id="control-panel">
-            <h2>COMMAND INTERACTION</h2>
-            <button class="action-btn" onclick="triggerAction('/api/actions/github-deploy')">Deploy via GitHub Actions</button>
-            <button class="action-btn secondary" onclick="triggerAction('/api/actions/run-diagnostics')">Force Run Diagnostics</button>
-            
-            <h2 style="margin-top: 20px;">INTER-DOMAIN P2P</h2>
-            <input type="text" id="peer-url" placeholder="http://remote-node:8080" style="width:100%; padding: 8px; margin-bottom: 10px; background: #050508; color: #38bdf8; border: 1px solid #1e293b; border-radius: 4px; box-sizing: border-box;" />
-            <button class="action-btn" style="border-color: #10b981; color: #10b981;" onclick="dialPeer()">Connect Sibling Node</button>
-            
-            <h2 style="margin-top: 20px;">SYSTEM STATUS REPORT</h2>
-            <div id="terminal-feed">> System standing by for manual overrides...</div>
-          </div>
-
-          <!-- Main Dashboard Panel -->
-          <div id="main-content">
-            <header>
-              <h1>HYPER-CONTEXT CONTROL NET // COMPOUND OVERVIEW</h1>
-              <div style="font-size: 0.85rem; color: #10b981; font-weight:600;">📡 REMOTE SERVER POOL ACTIVE</div>
-            </header>
-            
-            <div id="graph-view">
-              <div style="text-align: center; color: #64748b; margin-top: 40px;">Polling system operational state matrix...</div>
+            <div>
+              <h2>Sensory Interface</h2>
+              <div id="terminal-feed">> Secure Link Absolute.<br>> Standing by for voice note transcription or text directives...</div>
+            </div>
+            <div>
+              <input type="text" id="directive-input" class="input-box" placeholder="Type command (e.g., 'commune christmas')..." onkeydown="if(event.key==='Enter') sendDirective()">
             </div>
           </div>
-
+          <div id="main-content">
+            <header>
+              <h1>CORE.TMSAVANNAH.COM // SYSTEM SHIELD MATRIX</h1>
+              <div style="font-size: 0.75rem; color: #38bdf8; font-weight: 700; background: #111827; padding: 4px 10px; border-radius: 12px; border: 1px solid #1e293b;">🔒 OSI LAYER 7 ENFORCED</div>
+            </header>
+            <div id="graph-view"></div>
+          </div>
           <script>
-            const logFeed = document.getElementById('terminal-feed');
-            
-            function printLog(msg) {
-              logFeed.innerHTML += \`<br>> \${msg}\`;
-              logFeed.scrollTop = logFeed.scrollHeight;
-            }
-
-            async function dialPeer() {
-              const targetUrl = document.getElementById('peer-url').value;
-              printLog("Dialing outbound peer domain: " + targetUrl + "...");
+            const feed = document.getElementById('terminal-feed');
+            async function sendDirective() {
+              const el = document.getElementById('directive-input');
+              const cmd = el.value.trim();
+              if(!cmd) return;
+              el.value = '';
+              feed.innerHTML += \`<br><span style="color:#38bdf8">> \${cmd}</span>\`;
               try {
-                const res = await fetch('/api/actions/connect-peer', { 
+                const res = await fetch('/api/sensory/directive', {
                   method: 'POST',
                   headers: { 'Content-Type': 'application/json' },
-                  body: JSON.stringify({ targetUrl })
+                  body: JSON.stringify({ directive: cmd })
                 });
                 const data = await res.json();
-                printLog("Handshake back: " + data.message);
-              } catch (e) {
-                printLog("Error: P2P Dial failed.");
+                feed.innerHTML += \`<br><span style="color:#f1f5f9">> \${data.message || data.error}</span>\`;
+                feed.scrollTop = feed.scrollHeight;
+              } catch(e) {
+                feed.innerHTML += '<br><span style="color:#ef4444">> Signal Drop.</span>';
               }
             }
-
-            async function triggerAction(endpoint) {
-              printLog("Broadcasting execution command to endpoint: " + endpoint + "...");
-              try {
-                const res = await fetch(endpoint, { method: 'POST' });
-                const data = await res.json();
-                printLog("Handshake back: " + data.message);
-                if (data.log && data.log.stdout) printLog(data.log.stdout);
-              } catch (e) {
-                printLog("Error: Execution pathway dropped.");
-              }
-            }
-
-            async function fetchTopology() {
+            async function pollTopology() {
               try {
                 const res = await fetch('/api/topology');
                 const data = await res.json();
                 const view = document.getElementById('graph-view');
                 view.innerHTML = '';
-                
-                let activeThemeColor = null;
-
                 Object.values(data.nodes).forEach(node => {
                   const card = document.createElement('div');
                   card.className = 'card';
-                  card.innerHTML = \`<div class="node-title">⬡ \${node.title} (\${node.id})</div><div class="node-content">\${node.content}</div>\`;
-                  if(node.tags) {
-                    node.tags.forEach(t => {
-                      card.innerHTML += \`<span class="tag">\${t}</span>\`;
-                    });
-                    
-                    if (node.tags.includes("seasonal-commune")) {
-                      const match = node.content.match(/Unified Theme Color Match:\\s*(#[0-9a-fA-F]{3,6})/);
-                      if (match) activeThemeColor = match[1];
-                    }
-                  }
+                  if(node.tags && node.tags.includes('seasonal-commune')) card.style.borderLeftColor = '#ef4444';
+                  card.innerHTML = \`<div class="node-title">⬡ \${node.title}</div><div class="node-content">\${node.content}</div>\`;
                   view.appendChild(card);
                 });
-
-                if (activeThemeColor) {
-                  let dynamicStyle = document.getElementById('dynamic-theme');
-                  if (!dynamicStyle) {
-                    dynamicStyle = document.createElement('style');
-                    dynamicStyle.id = 'dynamic-theme';
-                    document.head.appendChild(dynamicStyle);
-                  }
-                  dynamicStyle.innerHTML = \`
-                    h2 { color: \${activeThemeColor} !important; border-bottom-color: \${activeThemeColor}44 !important; }
-                    .action-btn { border-color: \${activeThemeColor} !important; color: \${activeThemeColor} !important; }
-                    .action-btn:hover { background: \${activeThemeColor} !important; color: #090a0f !important; box-shadow: 0 0 15px \${activeThemeColor}88 !important; }
-                    .tag { color: \${activeThemeColor} !important; }
-                    #peer-url { color: \${activeThemeColor} !important; }
-                  \`;
-                }
-
-              } catch (e) {}
+              } catch(e) {}
             }
-            
-            fetchTopology();
-            setInterval(fetchTopology, 3000);
+            setInterval(pollTopology, 3000);
+            pollTopology();
           </script>
         </body>
         </html>
@@ -275,7 +198,7 @@ export class UiRendererDashboard {
     });
 
     this.server.listen(port, () => {
-      console.error(`[UI Dashboard Server]: Production Command Panel active on port ${port}`);
+      console.error(`[Hardened Server]: Interactive Dashboard running on port ${port}`);
     });
   }
 }
