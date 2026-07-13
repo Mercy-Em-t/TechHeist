@@ -1,0 +1,2 @@
+# Core dependencies for Phase 1
+# Keeping it minimal initially to ensure lightweight deployment
