@@ -1,12 +1,23 @@
 import * as http from "http";
 import * as fs from "fs";
 import { ExecutionRuntime } from "./execution-runtime.js";
-import { P2PBridge } from "./p2p-bridge.js";
+
+// Helper to parse incoming asynchronous body payloads
+async function getJsonBody(req: http.IncomingMessage): Promise<any> {
+  return new Promise((resolve, reject) => {
+    let body = "";
+    req.on("data", chunk => body += chunk);
+    req.on("end", () => {
+      try { resolve(JSON.parse(body)); }
+      catch { resolve({}); }
+    });
+  });
+}
 
 export class UiRendererDashboard {
   private server: http.Server | null = null;
 
-  public launchDashboard(stateFilePath: string, port: number = 8080, p2pBridge?: P2PBridge) {
+  public launchDashboard(stateFilePath: string, port: number = 8080) {
     this.server = http.createServer(async (req, res) => {
       
       // CORS headers to ensure fluid API communication across proxies
@@ -22,16 +33,9 @@ export class UiRendererDashboard {
         return;
       }
 
-      // Helper to parse JSON body
-      const parseBody = (request: http.IncomingMessage): Promise<any> => {
-        return new Promise((resolve) => {
-          let body = '';
-          request.on('data', chunk => body += chunk.toString());
-          request.on('end', () => {
-            try { resolve(JSON.parse(body)); } catch (e) { resolve({}); }
-          });
-        });
-      };
+      // Pull in the peer networking controller classes
+      const { P2pMeshEngine } = await import("./p2p-mesh.js");
+      const { BiochemicalBus } = await import("./biochemical-bus.js");
 
       // Endpoint 1: Send the raw network layout state to the dashboard UI
       if (req.url === "/api/topology" && req.method === "GET") {
@@ -44,54 +48,40 @@ export class UiRendererDashboard {
         return;
       }
 
-      // Endpoint: Incoming P2P Handshake from external sibling
+      // Route A: The Inter-Domain Handshake Doorway
       if (req.url === "/api/network/handshake" && req.method === "POST") {
-        const payload = await parseBody(req);
-        if (p2pBridge && p2pBridge.evaluateHandshake(payload.token, payload.peerId, payload.domainUrl)) {
-          // If successful, log the connection
-          if (fs.existsSync(stateFilePath)) {
-            const memoryNetwork = JSON.parse(fs.readFileSync(stateFilePath, "utf-8"));
-            memoryNetwork.nodes[payload.peerId] = {
-              id: payload.peerId,
-              title: `Sibling Node Connected`,
-              content: `Established P2P bridge with external domain: ${payload.domainUrl}`,
-              tags: ["p2p", "external-domain", "sibling"]
-            };
-            fs.writeFileSync(stateFilePath, JSON.stringify(memoryNetwork, null, 2));
-          }
-          res.writeHead(200, { ...headers, "Content-Type": "application/json" });
-          res.end(JSON.stringify({ success: true, message: "P2P Handshake Accepted" }));
-        } else {
-          res.writeHead(403, { ...headers, "Content-Type": "application/json" });
-          res.end(JSON.stringify({ success: false, message: "P2P Handshake Rejected (Invalid Token)" }));
+        const body = await getJsonBody(req);
+        
+        if (!body.nodeId || !body.domainUrl) {
+          res.writeHead(400, headers);
+          res.end(JSON.stringify({ error: "Invalid systemic connection payload profile parameters." }));
+          return;
         }
+
+        const registrationReport = P2pMeshEngine.registerPeer({
+          nodeId: body.nodeId,
+          operatorName: body.operatorName || "Anonymous Operator",
+          domainUrl: body.domainUrl,
+          handshakeToken: body.securityToken || "default-mesh-pass-xxxx",
+          connectedAt: new Date().toISOString()
+        });
+
+        res.writeHead(200, { ...headers, "Content-Type": "application/json" });
+        res.end(JSON.stringify({ success: true, message: registrationReport }));
         return;
       }
 
-      // Endpoint: Outgoing manual dial to connect a peer
-      if (req.url === "/api/actions/connect-peer" && req.method === "POST") {
-        const payload = await parseBody(req);
-        if (p2pBridge && payload.targetUrl) {
-          const success = await p2pBridge.establishHandshake(payload.targetUrl);
-          
-          if (success && fs.existsSync(stateFilePath)) {
-             const memoryNetwork = JSON.parse(fs.readFileSync(stateFilePath, "utf-8"));
-             const peerId = `hyper-node-remote-${Date.now()}`;
-             memoryNetwork.nodes[peerId] = {
-                id: peerId,
-                title: `Sibling Node Dialed`,
-                content: `Successfully dialed and connected to external domain: ${payload.targetUrl}`,
-                tags: ["p2p", "outbound", "sibling"]
-             };
-             fs.writeFileSync(stateFilePath, JSON.stringify(memoryNetwork, null, 2));
-          }
+      // Route B: Ingestion portal for external sister cell whispers
+      if (req.url === "/api/network/ingest-signal" && req.method === "POST") {
+        const incomingHormone = await getJsonBody(req);
+        
+        console.error(`\n🧬 [Inter-Domain Ingestion]: Absorbing external biological signal: ${incomingHormone.type}`);
+        
+        // Feed the incoming external web wave straight into our local system's bloodstream!
+        BiochemicalBus.distributeToNervousSystem(incomingHormone);
 
-          res.writeHead(200, { ...headers, "Content-Type": "application/json" });
-          res.end(JSON.stringify({ success, message: success ? "Peer Handshake Dialed." : "Peer Dial Failed." }));
-        } else {
-          res.writeHead(400, { ...headers, "Content-Type": "application/json" });
-          res.end(JSON.stringify({ success: false, message: "Invalid payload or P2P Bridge missing." }));
-        }
+        res.writeHead(200, { ...headers, "Content-Type": "application/json" });
+        res.end(JSON.stringify({ success: true, message: "Signal distributed to local neural branches." }));
         return;
       }
 

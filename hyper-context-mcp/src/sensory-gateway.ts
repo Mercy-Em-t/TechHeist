@@ -43,6 +43,17 @@ export class SensoryGateway {
       return `🛠️ Intent parsed: System Maintenance. Dispatched an autonomous self-healing loop to run background environment verification.`;
     }
 
+    // Intent 4: Command the network plants to commune and coordinate for an upcoming holiday season
+    if (input.includes("commune") || input.includes("season") || input.includes("christmas") || input.includes("easter")) {
+      const targetedSeason = input.includes("christmas") ? "christmas" : input.includes("easter") ? "easter" : "new_years";
+      
+      // Call our synchronizer script to secrete the initial hormone wave
+      const { SeasonalSynchronizer } = await import("./seasonal-synchronizer.js");
+      SeasonalSynchronizer.initiateCommune(targetedSeason, "sensory-gateway-trigger");
+
+      return `📅 Intent parsed: Calendar Choreography. Opened an inter-domain forum for the [${targetedSeason.toUpperCase()}] season. Gathering regional findings...`;
+    }
+
     // Intent 3: Generic conversational injection straight into the organism's bloodstream
     BiochemicalBus.secreteHormone("HUMAN_CONVERSATIONAL_INJECTION", "sensory-gateway-ui", {
       rawMessage: rawInput

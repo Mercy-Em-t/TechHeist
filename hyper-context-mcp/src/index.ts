@@ -24,7 +24,7 @@ import { ProtocolLoader } from "./protocol-loader.js";
 import { BiochemicalBus, BiochemicalHormone } from "./biochemical-bus.js";
 import { DnaSequencer, MacroMissionBlueprint } from "./dna-sequencer.js";
 import { SensoryGateway } from "./sensory-gateway.js";
-import { P2PBridge } from "./p2p-bridge.js";
+import { SeasonalSynchronizer, SeasonalPlaybook } from "./seasonal-synchronizer.js";
 
 // Load secure environment keys immediately upon startup
 EnvVault.load();
@@ -170,6 +170,36 @@ BiochemicalBus.registerReceptor((hormone: BiochemicalHormone) => {
   if (CURRENT_CELL_ROLE === "NUCLEUS" && hormone.type === "ABSOLUTE_DEPLOYMENT") {
     console.error(`\n🎉 [NUCLEUS]: ABSOLUTE DEPLOYMENT SECURED. PROJECT ${hormone.payload.deployedAppName} IS LIVE ON THE EXTERNAL NETWORK.\n`);
   }
+
+  // Conditional 1: Intercept an incoming seasonal proposal from an external plant
+  if (hormone.type === "SEASONAL_COMMUNE_PROPOSAL") {
+    const unifiedPlaybook = SeasonalSynchronizer.processPeerProposal(hormone, CURRENT_CELL_ID);
+    
+    if (unifiedPlaybook) {
+      const seasonalNodeId = `unified-season-${unifiedPlaybook.season.toLowerCase()}`;
+      
+      // Lock the unified cross-domain collective decision natively into our local graph brain file
+      memoryNetwork.nodes[seasonalNodeId] = {
+        id: seasonalNodeId,
+        title: `Collective Choreography: ${unifiedPlaybook.season}`,
+        content: `Unified Theme Color Match: ${unifiedPlaybook.themeColor}\nCore Operational Focus: ${unifiedPlaybook.promotionalFocus}\n\nMerged Inter-Domain Insights:\n${unifiedPlaybook.regionalInsights.map(i => `• ${i}`).join("\n")}`,
+        tags: ["seasonal-commune", "synchronized-presentation", unifiedPlaybook.season.toLowerCase()]
+      };
+      saveNetworkTopology(memoryNetwork);
+      
+      console.error(`✅ [Sovereign Alignment]: Finalized communal playbook locked into disk for ${unifiedPlaybook.season}.`);
+
+      // Automated Manualness Trigger: If this node is connected to our custom browser dashboards, 
+      // it immediately updates the visual color styling to match the agreed themeColor!
+    }
+  }
+
+  // If the hormone was generated locally, echo it through the inter-domain P2P grid
+  if (!hormone.payload.isExternalEcho) {
+    import("./p2p-mesh.js").then(({ P2pMeshEngine }) => {
+      P2pMeshEngine.broadcastToSisterDomains(hormone);
+    }).catch(e => console.error(e));
+  }
 });
 
 // If this code is running inside a forked daughter cell process, listen for broadcasts from the main heart
@@ -231,10 +261,9 @@ if (CURRENT_CELL_ROLE === "LEAF_INTEL") {
 // Initialize our operational engines right out of the block!
 const ambientMonitor = new FileSystemMonitor();
 const UICommandRoom = new UiRendererDashboard();
-const p2pBridge = new P2PBridge();
 
 // Start the UI Server Room mapping to this cell's individual memory state
-UICommandRoom.launchDashboard(STATE_FILE_PATH, PORT_ALLOCATION, p2pBridge);
+UICommandRoom.launchDashboard(STATE_FILE_PATH, PORT_ALLOCATION);
 
 // Start listening ambiently to file adjustments inside the workspace execution context
 ambientMonitor.startMonitoring(process.cwd(), (modifiedFile) => {
